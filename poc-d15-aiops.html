@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POC D-15 · P-22 — AIOps & Autonomous Systems</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f0ea;--bg2:#fff;--bg3:#e8e8e2;
+  --border:#ccccc4;
+  --ink:#14141c;--ink2:#2a2a38;--ink3:#5e5e70;--ink4:#9898aa;
+  --cyan:#065d6e;--cyan-l:#e2f4f8;--cyan-m:#70c8d8;
+  --violet:#3d0f8e;--violet-l:#ede8ff;--violet-m:#9878e8;
+  --amber:#8a5200;--amber-l:#fdf4df;--amber-m:#e8c058;
+  --red:#ac1420;--red-l:#fde8ea;--red-m:#f098a8;
+  --green:#115828;--green-l:#e4f5ec;--green-m:#74d098;
+  --slate:#1e3050;--slate-l:#e8eef8;--slate-m:#88a4cc;
+  --orange:#b84200;--orange-l:#fdf0e6;--orange-m:#f0a870;
+  --mono:'JetBrains Mono',monospace;
+  --serif:'Fraunces',serif;
+  --sans:'DM Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65}
+
+.hdr{background:linear-gradient(135deg,#0a1a30,var(--slate));padding:0 28px;display:flex;align-items:center;height:56px;gap:14px;position:sticky;top:0;z-index:400;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.poc-chip{font-family:var(--mono);font-size:11px;font-weight:600;background:rgba(255,255,255,.16);color:#fff;padding:3px 10px;border-radius:4px;letter-spacing:.04em;border:1px solid rgba(255,255,255,.25)}
+.hdr-title{font-size:16px;font-weight:700;color:#fff}
+.hdr-sub{font-size:12px;color:rgba(255,255,255,.48);font-family:var(--mono)}
+.cost-badge{margin-left:auto;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 13px;font-size:12px;font-family:var(--mono);color:#80f0d0;white-space:nowrap}
+
+.tabs{background:var(--slate);border-bottom:1px solid rgba(255,255,255,.08);display:flex;padding:0 28px;gap:2px}
+.tb{font-family:var(--mono);font-size:12px;font-weight:500;color:rgba(255,255,255,.38);padding:10px 18px;border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;transition:.15s;white-space:nowrap}
+.tb:hover{color:rgba(255,255,255,.75)}
+.tb.on{color:#fff;border-bottom-color:#70c8d8}
+
+.page{max-width:960px;margin:0 auto;padding:32px 28px 80px}
+.pane{display:none}.pane.on{display:block}
+
+.eyebrow{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px}
+.s-title{font-size:26px;font-weight:700;color:var(--ink);margin-bottom:6px;line-height:1.3}
+.s-sub{font-size:15px;color:var(--ink3);margin-bottom:28px;line-height:1.6}
+
+/* HOOK */
+.hook{background:#f4fcff;border:1px solid var(--cyan-m);border-left:4px solid var(--cyan);border-radius:8px;padding:16px 20px;margin-bottom:28px;display:flex;gap:14px}
+.hook-icon{font-size:22px;flex-shrink:0;margin-top:2px}
+.hook-lbl{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--cyan);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.hook-txt{font-family:var(--serif);font-size:16px;font-style:italic;color:var(--ink);line-height:1.65}
+.hook-note{font-size:13px;color:var(--ink3);margin-top:6px}
+
+/* FLOW DIAGRAM */
+.flow{display:flex;align-items:center;gap:0;margin:20px 0;overflow-x:auto;padding:4px 0}
+.flow-box{border-radius:8px;padding:14px 16px;text-align:center;min-width:140px;flex-shrink:0;border:1.5px solid}
+.flow-box .fb-icon{font-size:24px;margin-bottom:5px}
+.flow-box .fb-title{font-family:var(--mono);font-size:11px;font-weight:700;margin-bottom:2px}
+.flow-box .fb-sub{font-size:11px;color:var(--ink3)}
+.flow-arr{font-size:22px;color:var(--border);padding:0 6px;flex-shrink:0;align-self:center}
+.fb-alarm{border-color:var(--red-m);background:var(--red-l)}
+.fb-alarm .fb-title{color:var(--red)}
+.fb-brain{border-color:var(--violet-m);background:var(--violet-l)}
+.fb-brain .fb-title{color:var(--violet)}
+.fb-fix{border-color:var(--amber-m);background:var(--amber-l)}
+.fb-fix .fb-title{color:var(--amber)}
+.fb-verify{border-color:var(--green-m);background:var(--green-l)}
+.fb-verify .fb-title{color:var(--green)}
+.fb-report{border-color:var(--cyan-m);background:var(--cyan-l)}
+.fb-report .fb-title{color:var(--cyan)}
+
+/* STEPS */
+.step-group{margin-bottom:28px}
+.step-group-title{font-size:13px;font-weight:700;font-family:var(--mono);color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+
+.step{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.step-hdr{padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+.step-hdr:hover{background:var(--bg3)}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--cyan);color:#fff;font-family:var(--mono);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-title{font-size:14px;font-weight:700;color:var(--ink);flex:1}
+.step-badge{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid;white-space:nowrap}
+.sb-aws{color:var(--orange);border-color:var(--orange-m);background:var(--orange-l)}
+.sb-time{color:var(--ink4);border-color:var(--border);background:var(--bg3)}
+.step-tog{font-size:18px;color:var(--ink4);font-family:var(--mono);font-weight:700;flex-shrink:0}
+.step-body{display:none;padding:0 18px 18px;border-top:1px solid var(--border)}
+.step-body.open{display:block}
+
+/* INNER TABS */
+.itabs{display:flex;border-bottom:1px solid var(--border);margin:14px 0 0;gap:0}
+.itb{font-family:var(--mono);font-size:12px;font-weight:500;padding:8px 14px;border:none;background:none;cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent;transition:.15s}
+.itb:hover{color:var(--ink)}
+.itb.on{color:var(--cyan);border-bottom-color:var(--cyan);background:var(--cyan-l)}
+.ipane{display:none;padding-top:14px}.ipane.on{display:block}
+
+/* CODE */
+.code-wrap{position:relative;margin:12px 0}
+.code-lbl{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+pre{background:#0c1824;color:#c8e0f0;border-radius:8px;padding:16px 18px;font-family:var(--mono);font-size:13px;line-height:1.75;overflow-x:auto;white-space:pre}
+.cbtn{position:absolute;top:8px;right:8px;background:#162840;color:#6898c0;border:none;border-radius:4px;font-family:var(--mono);font-size:11px;padding:4px 10px;cursor:pointer;z-index:2}
+.cbtn:hover{background:#1e3858;color:#c8e0f0}
+.kw{color:#88c8f0}.fn{color:#70d8b4}.str{color:#a8e098}.cm{color:#406878;font-style:italic}
+.num{color:#f0c880}.attr{color:#f8e090}
+
+/* CONSOLE NAV */
+.nav-path{font-family:var(--mono);font-size:12px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:5px 10px;display:inline-flex;align-items:center;gap:5px;margin:6px 0;flex-wrap:wrap}
+.ns{color:var(--ink4)}
+.fr{display:grid;grid-template-columns:180px 1fr;gap:6px;align-items:baseline;margin:4px 0}
+.fk{font-family:var(--mono);font-size:12px;color:var(--ink3)}
+.fv{font-family:var(--mono);font-size:12px;color:var(--cyan);background:var(--cyan-l);border:1px solid var(--cyan-m);border-radius:4px;padding:2px 8px;width:fit-content}
+
+/* LOOK-FOR */
+.lf{background:var(--amber-l);border:1px solid var(--amber-m);border-radius:6px;padding:11px 14px;margin-top:10px;font-size:13px;color:var(--ink2);line-height:1.65}
+.lf strong{color:var(--amber);display:block;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.lf ul{margin:4px 0 0 16px}.lf ul li{margin-bottom:3px}
+
+/* WHY BOX */
+.why{background:var(--cyan-l);border:1px solid var(--cyan-m);border-radius:6px;padding:11px 14px;margin:10px 0;font-size:13px;color:var(--ink2);line-height:1.65;display:flex;gap:10px}
+.why-icon{flex-shrink:0;font-size:15px;margin-top:1px}
+.why strong{color:var(--cyan);display:block;margin-bottom:3px}
+
+/* CALLOUTS */
+.callout{border-radius:8px;padding:12px 16px;margin:12px 0;display:flex;gap:10px;font-size:13px;line-height:1.6}
+.callout .ci{font-size:16px;flex-shrink:0;margin-top:1px}
+.callout .cb{flex:1}
+.callout .cb strong{font-weight:700;display:block;margin-bottom:2px}
+.c-warn{background:var(--amber-l);border:1px solid var(--amber-m);color:var(--amber)}
+.c-danger{background:var(--red-l);border:1px solid var(--red-m);color:var(--red)}
+.c-tip{background:var(--violet-l);border:1px solid var(--violet-m);color:var(--violet)}
+.c-info{background:var(--slate-l);border:1px solid var(--slate-m);color:var(--slate)}
+.c-green{background:var(--green-l);border:1px solid var(--green-m);color:var(--green)}
+
+/* LEARNED */
+.learned{background:var(--bg2);border:1.5px solid var(--cyan-m);border-radius:10px;padding:20px 22px;margin-top:28px}
+.learned-title{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.learned ul{padding-left:20px;color:var(--ink2);font-size:14px;line-height:1.9}
+.learned ul li{margin-bottom:4px}
+.learned-next{margin-top:14px;padding:12px 14px;background:var(--cyan-l);border-radius:6px;font-size:13px;color:var(--cyan)}
+
+/* RESOURCE TABLE */
+.rtbl{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+.rtbl th{padding:8px 12px;text-align:left;font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:600;border-bottom:2px solid var(--border);background:var(--bg3)}
+.rtbl td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--ink2)}
+.rtbl td.mn{font-family:var(--mono);font-size:12px}
+.rtbl td.cg{color:var(--green);font-weight:700}
+.rtbl td.cr{color:var(--red);font-weight:700}
+.rtbl td.ca{color:var(--amber);font-weight:700}
+.rtbl tr:last-child td{font-weight:700;background:var(--bg3)}
+
+code.il{font-family:var(--mono);font-size:12px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:1px 5px;color:var(--ink2)}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <span class="poc-chip">D-15 · P-22</span>
+  <div>
+    <div class="hdr-title">AIOps & Autonomous Systems</div>
+    <div class="hdr-sub">AI-powered incident detection · classification · auto-remediation</div>
+  </div>
+  <div class="cost-badge">⏱ 60 min · 💰 ~$0.50</div>
+</header>
+
+<nav class="tabs">
+  <button class="tb on"  onclick="sw('overview',this)">🗺 Overview</button>
+  <button class="tb" onclick="sw('prereq',this)">🔧 Prerequisites</button>
+  <button class="tb" onclick="sw('lab',this)">🧠 The Lab</button>
+  <button class="tb" onclick="sw('terraform',this)">⚡ Terraform</button>
+  <button class="tb" onclick="sw('cleanup',this)">🧹 Cleanup</button>
+</nav>
+
+<div class="page">
+
+<!-- ═══════════════════ OVERVIEW ═══════════════════ -->
+<div class="pane on" id="pane-overview">
+  <div class="eyebrow">Domain 15 · P-22 · 60 min</div>
+  <div class="s-title">One alarm. One AI brain. One automated fix.</div>
+  <div class="s-sub">You will build a system that detects a problem, asks Claude what it is, fixes it automatically, and sends you a plain-English report — all in under 2 minutes, while you sleep.</div>
+
+  <div class="hook">
+    <div class="hook-icon">🪝</div>
+    <div>
+      <div class="hook-lbl">Memory Hook</div>
+      <div class="hook-txt">"AIOps is a night-shift manager who never sleeps. When the alarm goes off, it reads the dashboards, decides what's wrong, fixes the most likely cause, confirms it worked, and leaves you a note. You wake up to a resolved incident and a report — not a 3am phone call."</div>
+      <div class="hook-note">The key insight: separate <strong>detection</strong> (CloudWatch knows something is wrong) from <strong>understanding</strong> (Claude knows what it means) from <strong>action</strong> (Lambda knows how to fix it). Each layer does one job well.</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:20px">
+    <div class="eyebrow" style="margin-bottom:10px">What you will build</div>
+    <div class="flow">
+      <div class="flow-box fb-alarm">
+        <div class="fb-icon">🔔</div>
+        <div class="fb-title">CloudWatch</div>
+        <div class="fb-sub">Error rate alarm fires</div>
+      </div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box fb-brain">
+        <div class="fb-icon">🧠</div>
+        <div class="fb-title">Claude Haiku</div>
+        <div class="fb-sub">Classifies severity + cause</div>
+      </div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box fb-fix">
+        <div class="fb-icon">⚡</div>
+        <div class="fb-title">Auto-fix</div>
+        <div class="fb-sub">Restarts Lambda or scales up</div>
+      </div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box fb-verify">
+        <div class="fb-icon">✅</div>
+        <div class="fb-title">Verify</div>
+        <div class="fb-sub">Confirms alarm cleared</div>
+      </div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box fb-report">
+        <div class="fb-icon">📧</div>
+        <div class="fb-title">Incident report</div>
+        <div class="fb-sub">SNS email with AI summary</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:24px">
+    <div class="eyebrow" style="margin-bottom:10px">6 resources. That's the whole lab.</div>
+    <table class="rtbl">
+      <thead><tr><th>Resource</th><th>What it does</th><th>Cost</th></tr></thead>
+      <tbody>
+        <tr><td><strong>CloudWatch Alarm</strong></td><td class="mn">Watches Lambda error rate — triggers the pipeline</td><td class="mn cg">$0.10/mo</td></tr>
+        <tr><td><strong>SNS Topic</strong></td><td class="mn">Alarm → Lambda trigger + email report delivery</td><td class="mn cg">~$0.00</td></tr>
+        <tr><td><strong>Lambda: aiops-brain</strong></td><td class="mn">The AI layer — calls Claude, decides action, executes, verifies</td><td class="mn cg">~$0.00</td></tr>
+        <tr><td><strong>DynamoDB table</strong></td><td class="mn">Stores one record per incident (pattern learning seed)</td><td class="mn cg">~$0.00</td></tr>
+        <tr><td><strong>IAM role</strong></td><td class="mn">One role for the Lambda (CloudWatch + Bedrock + DynamoDB)</td><td class="mn cg">Free</td></tr>
+        <tr><td><strong>Bedrock (Claude Haiku)</strong></td><td class="mn">AI classification + incident report generation</td><td class="mn cg">~$0.001/run</td></tr>
+        <tr><td><strong>Total</strong></td><td></td><td class="mn cg"><strong>~$0.50 for 1hr</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px 20px">
+    <div class="eyebrow" style="margin-bottom:10px">3 concepts this lab teaches</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+      <div style="padding:14px;background:var(--violet-l);border:1px solid var(--violet-m);border-radius:8px">
+        <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--violet);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Concept 1</div>
+        <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px">AI as classifier, not actor</div>
+        <div style="font-size:12px;color:var(--ink3);line-height:1.6">Claude reads metric context and returns a structured label (noise / incident / outage). It does not take action. Separating understanding from action is the core safety principle of AIOps.</div>
+      </div>
+      <div style="padding:14px;background:var(--amber-l);border:1px solid var(--amber-m);border-radius:8px">
+        <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Concept 2</div>
+        <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px">Playbook over improvisation</div>
+        <div style="font-size:12px;color:var(--ink3);line-height:1.6">Auto-remediation uses pre-defined playbooks (restart / scale / rollback). The AI picks which playbook to run — it does not invent a novel fix. This bounds the blast radius to known-safe actions.</div>
+      </div>
+      <div style="padding:14px;background:var(--green-l);border:1px solid var(--green-m);border-radius:8px">
+        <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Concept 3</div>
+        <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px">Always verify recovery</div>
+        <div style="font-size:12px;color:var(--ink3);line-height:1.6">"I ran the playbook" ≠ "the system is healthy." The brain waits 60 seconds and checks if the alarm cleared. If it didn't, it escalates. Verification closes the loop.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PREREQS ═══════════════════ -->
+<div class="pane" id="pane-prereq">
+  <div class="eyebrow">Before you start · 10 min</div>
+  <div class="s-title">Prerequisites</div>
+  <div class="s-sub">Two things to do before the lab. Both are quick. The lab will not work without them.</div>
+
+  <div class="step-group">
+    <div class="step-group-title">Step 1 — Enable Bedrock model access</div>
+
+    <div class="step" id="p1">
+      <div class="step-hdr" onclick="tog('p1')">
+        <div class="step-num">1</div>
+        <div class="step-title">Enable Claude Haiku 3 in Amazon Bedrock</div>
+        <span class="step-badge sb-aws">Bedrock</span>
+        <span class="step-badge sb-time">2 min</span>
+        <span class="step-tog" id="tg-p1">＋</span>
+      </div>
+      <div class="step-body" id="bd-p1">
+        <div class="why"><div class="why-icon">🎯</div><div><strong>Why this step matters</strong>Terraform and the AWS CLI cannot enable Bedrock model access — it requires accepting Anthropic's usage terms in the console. The Lambda will throw a <code class="il">AccessDeniedException</code> on every Bedrock call until you do this. Takes 2 minutes and is permanent in your account.</div></div>
+        <div class="nav-path">Amazon Bedrock <span class="ns">›</span> Model access <span class="ns">›</span> Modify model access</div>
+        <div class="fr"><span class="fk">Select model</span><span class="fv">Claude Haiku 3 (Anthropic)</span></div>
+        <div style="font-size:13px;color:var(--ink2);margin-top:6px">Tick the checkbox → click <strong>Save changes</strong>. Status changes from "Available" to "Access granted" in 1–2 minutes.</div>
+        <div class="lf"><strong>✅ Confirm before continuing</strong><ul>
+          <li>Status column shows <strong>Access granted</strong> next to Claude Haiku 3</li>
+          <li>Model ID: <code class="il">anthropic.claude-haiku-4-5-20251001</code> — this exact string goes in the Lambda code</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="step-group-title" style="margin-top:20px">Step 2 — Deploy sample app Lambda (the thing we will observe)</div>
+
+    <div class="step" id="p2">
+      <div class="step-hdr" onclick="tog('p2')">
+        <div class="step-num">2</div>
+        <div class="step-title">Create the sample app Lambda and seed metric data</div>
+        <span class="step-badge sb-aws">Lambda · CloudWatch</span>
+        <span class="step-badge sb-time">8 min</span>
+        <span class="step-tog" id="tg-p2">＋</span>
+      </div>
+      <div class="step-body" id="bd-p2">
+        <div class="why"><div class="why-icon">🎯</div><div><strong>Why we need this</strong>The CloudWatch alarm needs a real metric to watch. This sample Lambda emits an <code class="il">ErrorRate</code> metric to a custom namespace using EMF (Embedded Metrics Format — print JSON to stdout, CloudWatch extracts numbers automatically). No extra API cost, sub-second latency. We invoke it in "spike" mode to trigger the alarm and test the AIOps pipeline.</div></div>
+
+        <div class="itabs">
+          <button class="itb on" onclick="isw('p2c','p2',this)">Console Steps</button>
+          <button class="itb" onclick="isw('p2py','p2',this)">🐍 Run locally (Mac)</button>
+          <button class="itb" onclick="isw('p2tf','p2',this)">⚡ Terraform</button>
+          <button class="itb" onclick="isw('p2k','p2',this)">Lambda Code</button>
+        </div>
+
+        <div class="ipane on" id="ip-p2c">
+          <div class="nav-path">Lambda <span class="ns">›</span> Create function <span class="ns">›</span> Author from scratch</div>
+          <div class="fr"><span class="fk">Function name</span><span class="fv">aiops-sample-app</span></div>
+          <div class="fr"><span class="fk">Runtime</span><span class="fv">Python 3.12</span></div>
+          <div class="fr"><span class="fk">Architecture</span><span class="fv">x86_64</span></div>
+          <div style="font-size:13px;color:var(--ink2);margin:10px 0 4px">Under Permissions → Execution role → Create a new role with basic Lambda permissions. Paste the Lambda Code (last tab) into the code editor. Click <strong>Deploy</strong>. Set timeout to <strong>10 seconds</strong>: Configuration → General configuration → Edit.</div>
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 6px">Invoke 10 times in normal mode to seed metric data:</div>
+          <div class="nav-path">Lambda <span class="ns">›</span> aiops-sample-app <span class="ns">›</span> Test <span class="ns">›</span> Create new event</div>
+          <div style="font-size:13px;color:var(--ink2);margin:4px 0">Paste <code class="il">{"mode": "normal"}</code> as the test event. Click <strong>Test</strong> 10 times.</div>
+          <div class="lf"><strong>✅ Confirm metric data exists</strong><ul>
+            <li>CloudWatch → Metrics → All metrics → Custom namespaces → <strong>AIOpsDemo</strong> appears</li>
+            <li>AIOpsDemo → Service → <strong>ErrorRate</strong> metric listed with data points at ~5%</li>
+          </ul></div>
+        </div>
+
+        <div class="ipane" id="ip-p2py">
+          <div class="why"><div class="why-icon">🎯</div><div><strong>Skip the Lambda entirely for seeding</strong> CloudWatch's PutMetricData API works from anywhere — your Mac, a Lambda, CI. This script pushes the same <code class="il">AIOpsDemo</code> metrics directly. You only need your AWS credentials configured (<code class="il">aws configure</code> or an active SSO session). No IAM role, no zip file, no console clicks.</div></div>
+          <div class="code-wrap">
+            <div class="code-lbl">bash · install dependency (one-time)</div>
+            <button class="cbtn" onclick="cp(this)">copy</button>
+<pre>pip install boto3</pre>
+          </div>
+          <div class="code-wrap">
+            <div class="code-lbl">python · seed_metrics.py · run this on your Mac</div>
+            <button class="cbtn" onclick="cp(this)">copy</button>
+<pre><span class="cm">#!/usr/bin/env python3
+"""
+seed_metrics.py — push AIOpsDemo metrics to CloudWatch from your Mac.
+Usage:
+  python seed_metrics.py          # normal mode  (ErrorRate ~5%)
+  python seed_metrics.py spike    # spike mode   (ErrorRate ~60%)
+  python seed_metrics.py          # run normal first, then spike to trigger alarm
+"""</span>
+<span class="kw">import</span> boto3, random, time, sys
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime, timezone
+
+cw     = boto3.client(<span class="str">"cloudwatch"</span>, region_name=<span class="str">"us-east-1"</span>)
+mode   = sys.argv[<span class="num">1</span>] <span class="kw">if</span> len(sys.argv) > <span class="num">1</span> <span class="kw">else</span> <span class="str">"normal"</span>
+runs   = <span class="num">5</span> <span class="kw">if</span> mode == <span class="str">"spike"</span> <span class="kw">else</span> <span class="num">15</span>
+
+error_rate = <span class="num">0.60</span> <span class="kw">if</span> mode == <span class="str">"spike"</span> <span class="kw">else</span> <span class="num">0.05</span>
+latency_fn = <span class="kw">lambda</span>: random.randint(<span class="num">400</span>, <span class="num">900</span>) <span class="kw">if</span> mode == <span class="str">"spike"</span> <span class="kw">else</span> random.randint(<span class="num">20</span>, <span class="num">80</span>)
+
+print(<span class="str">f"Pushing {runs} data points in [{mode}] mode  (ErrorRate ~{error_rate*100:.0f}%)"</span>)
+
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(runs):
+    latency = latency_fn()
+    err_pct = error_rate * <span class="num">100</span> + random.uniform(<span class="num">-3</span>, <span class="num">3</span>)  <span class="cm"># small jitter</span>
+
+    cw.put_metric_data(
+        Namespace=<span class="str">"AIOpsDemo"</span>,
+        MetricData=[
+            {<span class="str">"MetricName"</span>: <span class="str">"ErrorRate"</span>,
+             <span class="str">"Dimensions"</span>: [{<span class="str">"Name"</span>: <span class="str">"Service"</span>, <span class="str">"Value"</span>: <span class="str">"order-processor"</span>}],
+             <span class="str">"Value"</span>: err_pct, <span class="str">"Unit"</span>: <span class="str">"Percent"</span>,
+             <span class="str">"Timestamp"</span>: datetime.now(tz=timezone.utc)},
+            {<span class="str">"MetricName"</span>: <span class="str">"Latency"</span>,
+             <span class="str">"Dimensions"</span>: [{<span class="str">"Name"</span>: <span class="str">"Service"</span>, <span class="str">"Value"</span>: <span class="str">"order-processor"</span>}],
+             <span class="str">"Value"</span>: latency, <span class="str">"Unit"</span>: <span class="str">"Milliseconds"</span>,
+             <span class="str">"Timestamp"</span>: datetime.now(tz=timezone.utc)},
+            {<span class="str">"MetricName"</span>: <span class="str">"RequestCount"</span>,
+             <span class="str">"Dimensions"</span>: [{<span class="str">"Name"</span>: <span class="str">"Service"</span>, <span class="str">"Value"</span>: <span class="str">"order-processor"</span>}],
+             <span class="str">"Value"</span>: <span class="num">1</span>, <span class="str">"Unit"</span>: <span class="str">"Count"</span>,
+             <span class="str">"Timestamp"</span>: datetime.now(tz=timezone.utc)},
+        ]
+    )
+    print(<span class="str">f"  [{i+1:2}/{runs}] ErrorRate={err_pct:.1f}%  Latency={latency}ms"</span>)
+    time.sleep(<span class="num">1</span>)
+
+print(<span class="str">f"\n✅ Done. Check CloudWatch → Metrics → AIOpsDemo in ~30 seconds."</span>)
+<span class="kw">if</span> mode == <span class="str">"spike"</span>:
+    print(<span class="str">"   Alarm should fire within 60s — watch CloudWatch → Alarms."</span>)</pre>
+          </div>
+          <div class="lf"><strong>✅ How to use this script end-to-end</strong><ul>
+            <li>First run: <code class="il">python seed_metrics.py</code> — pushes 15 normal data points, alarm stays OK</li>
+            <li>Then after Terraform apply: <code class="il">python seed_metrics.py spike</code> — pushes 5 spike points, alarm fires within 60s</li>
+            <li>CloudWatch → Metrics → AIOpsDemo → Service → ErrorRate — data appears within 30 seconds</li>
+            <li>No Lambda needed at all — <code class="il">PutMetricData</code> works from anywhere with valid AWS credentials</li>
+          </ul></div>
+        </div>
+
+        <div class="ipane" id="ip-p2tf">
+          <div class="why"><div class="why-icon">🎯</div><div><strong>If you prefer Terraform for the sample app too</strong> This deploys the sample app Lambda via Terraform. Skip this if you plan to use the local Python script above — both seed the same metric namespace. Use this if you want <em>everything</em> in Terraform and prefer to trigger spikes via Lambda invoke rather than a local script.</div></div>
+          <div class="code-wrap">
+            <div class="code-lbl">HCL · add to main.tf (or the full Terraform tab already has this)</div>
+            <button class="cbtn" onclick="cp(this)">copy</button>
+<pre><span class="cm"># Sample app Lambda — the service we observe</span>
+resource <span class="str">"aws_iam_role"</span> <span class="str">"sample_app"</span> {
+  name = <span class="str">"aiops-sample-app-role"</span>
+  assume_role_policy = jsonencode({
+    Version = <span class="str">"2012-10-17"</span>
+    Statement = [{ Effect = <span class="str">"Allow"</span>, Principal = { Service = <span class="str">"lambda.amazonaws.com"</span> },
+                   Action = <span class="str">"sts:AssumeRole"</span> }]
+  })
+}
+resource <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"sample_app_basic"</span> {
+  role       = aws_iam_role.sample_app.name
+  policy_arn = <span class="str">"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"</span>
+}
+
+resource <span class="str">"aws_lambda_function"</span> <span class="str">"sample_app"</span> {
+  function_name    = <span class="str">"aiops-sample-app"</span>
+  filename         = <span class="str">"lambda_zips/sample_app.zip"</span>
+  source_code_hash = filebase64sha256(<span class="str">"lambda_zips/sample_app.zip"</span>)
+  handler          = <span class="str">"sample_app.lambda_handler"</span>
+  runtime          = <span class="str">"python3.12"</span>
+  role             = aws_iam_role.sample_app.arn
+  timeout          = <span class="num">10</span>
+}
+
+resource <span class="str">"aws_cloudwatch_log_group"</span> <span class="str">"sample_app"</span> {
+  name              = <span class="str">"/aws/lambda/aiops-sample-app"</span>
+  retention_in_days = <span class="num">7</span>
+}
+
+<span class="cm"># After apply — seed normal traffic:</span>
+<span class="cm"># for i in {1..10}; do</span>
+<span class="cm">#   aws lambda invoke --function-name aiops-sample-app \</span>
+<span class="cm">#     --payload '{"mode":"normal"}' --cli-binary-format raw-in-base64-out /dev/null</span>
+<span class="cm"># done</span></pre>
+          </div>
+          <div class="callout c-info" style="margin-top:8px">
+            <span class="ci">ℹ️</span>
+            <div class="cb">The full <strong>Terraform tab</strong> already includes this sample app resource alongside everything else — IAM, alarm, SNS, brain Lambda, DynamoDB — in one <code class="il">terraform apply</code>. Only copy this snippet if you want to deploy the sample app separately before running the full Terraform.</div>
+          </div>
+        </div>
+
+        <div class="ipane" id="ip-p2k">
+          <div class="code-wrap">
+            <div class="code-lbl">python · sample_app.py · Lambda handler (also used as lambda_src/sample_app.py for Terraform)</div>
+            <button class="cbtn" onclick="cp(this)">copy</button>
+<pre><span class="kw">import</span> json, time, random
+
+<span class="kw">def</span> <span class="fn">lambda_handler</span>(event, context):
+    mode = event.get(<span class="str">"mode"</span>, <span class="str">"normal"</span>)
+
+    <span class="cm"># normal: ~5% errors   spike: ~60% errors</span>
+    error_rate = <span class="num">0.60</span> <span class="kw">if</span> mode == <span class="str">"spike"</span> <span class="kw">else</span> <span class="num">0.05</span>
+    latency_ms = random.randint(<span class="num">400</span>, <span class="num">900</span>) <span class="kw">if</span> mode == <span class="str">"spike"</span> <span class="kw">else</span> random.randint(<span class="num">20</span>, <span class="num">80</span>)
+
+    <span class="cm"># EMF — CloudWatch reads this JSON and auto-creates metrics. Zero extra API cost.</span>
+    print(json.dumps({
+        <span class="str">"_aws"</span>: {
+            <span class="str">"Timestamp"</span>: <span class="fn">int</span>(time.time() * <span class="num">1000</span>),
+            <span class="str">"CloudWatchMetrics"</span>: [{
+                <span class="str">"Namespace"</span>: <span class="str">"AIOpsDemo"</span>,
+                <span class="str">"Dimensions"</span>: [[<span class="str">"Service"</span>]],
+                <span class="str">"Metrics"</span>: [
+                    {<span class="str">"Name"</span>: <span class="str">"ErrorRate"</span>,    <span class="str">"Unit"</span>: <span class="str">"Percent"</span>},
+                    {<span class="str">"Name"</span>: <span class="str">"RequestCount"</span>, <span class="str">"Unit"</span>: <span class="str">"Count"</span>},
+                    {<span class="str">"Name"</span>: <span class="str">"Latency"</span>,      <span class="str">"Unit"</span>: <span class="str">"Milliseconds"</span>},
+                ]
+            }]
+        },
+        <span class="str">"Service"</span>:      <span class="str">"order-processor"</span>,
+        <span class="str">"ErrorRate"</span>:    error_rate * <span class="num">100</span>,
+        <span class="str">"RequestCount"</span>: <span class="num">1</span>,
+        <span class="str">"Latency"</span>:      latency_ms,
+    }))
+    <span class="kw">return</span> {<span class="str">"statusCode"</span>: <span class="num">200</span>, <span class="str">"mode"</span>: mode, <span class="str">"error_rate_pct"</span>: error_rate * <span class="num">100</span>}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ THE LAB ═══════════════════ -->
+<div class="pane" id="pane-lab">
+  <div class="eyebrow">The Lab · ~40 min</div>
+  <div class="s-title">Build the AIOps brain</div>
+  <div class="s-sub">Three steps: wire the alarm, deploy the brain Lambda, trigger and watch the full pipeline run end-to-end.</div>
+
+  <!-- Step 1: Alarm -->
+  <div class="step-group">
+    <div class="step-group-title">Part 1 — Set up the alarm and notification</div>
+
+    <div class="step" id="s1">
+      <div class="step-hdr" onclick="tog('s1')">
+        <div class="step-num">1</div>
+        <div class="step-title">Create CloudWatch alarm on ErrorRate</div>
+        <span class="step-badge sb-aws">CloudWatch · SNS</span>
+        <span class="step-badge sb-time">8 min</span>
+        <span class="step-tog" id="tg-s1">＋</span>
+      </div>
+      <div class="step-body" id="bd-s1">
+        <div class="why"><div class="why-icon">🎯</div><div><strong>Why this specific metric and threshold</strong>We use a static threshold (ErrorRate > 30%) rather than anomaly detection for this lab. Anomaly detection needs 2+ weeks of data to be accurate — it would show a flat line with a meaningless wide band today. The 30% threshold is deliberately high so normal mode (5%) never triggers it, but spike mode (60%) always does. In production you'd use anomaly detection after the model has learned your baseline.</div></div>
+
+        <div class="itabs">
+          <button class="itb on" onclick="isw('s1c','s1',this)">Console Steps</button>
+          <button class="itb" onclick="isw('s1t','s1',this)">Terraform equivalent</button>
+        </div>
+
+        <div class="ipane on" id="ip-s1c">
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px">A — Create SNS topic first</div>
+          <div class="nav-path">SNS <span class="ns">›</span> Topics <span class="ns">›</span> Create topic</div>
+          <div class="fr"><span class="fk">Type</span><span class="fv">Standard</span></div>
+          <div class="fr"><span class="fk">Name</span><span class="fv">aiops-alerts</span></div>
+          <div style="font-size:13px;color:var(--ink2);margin-top:8px">After creating → <strong>Create subscription</strong> → Protocol: Email → enter your email → <strong>confirm the subscription link in your inbox before continuing</strong>. Also copy the Topic ARN — you'll need it in step 2.</div>
+
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px">B — Create the CloudWatch alarm</div>
+          <div class="nav-path">CloudWatch <span class="ns">›</span> Alarms <span class="ns">›</span> Create alarm <span class="ns">›</span> Select metric</div>
+          <div style="font-size:13px;color:var(--ink2);margin:4px 0">Navigate: Custom namespaces → AIOpsDemo → Service → tick <strong>ErrorRate</strong> → Select metric</div>
+          <div class="fr"><span class="fk">Statistic</span><span class="fv">Average</span></div>
+          <div class="fr"><span class="fk">Period</span><span class="fv">1 minute</span></div>
+          <div class="fr"><span class="fk">Threshold type</span><span class="fv">Static</span></div>
+          <div class="fr"><span class="fk">Condition</span><span class="fv">Greater than</span></div>
+          <div class="fr"><span class="fk">Threshold value</span><span class="fv">30</span></div>
+          <div class="fr"><span class="fk">Datapoints to alarm</span><span class="fv">1 out of 1</span></div>
+          <div class="fr"><span class="fk">Missing data</span><span class="fv">Treat as not breaching</span></div>
+          <div style="font-size:13px;color:var(--ink2);margin-top:10px">Next → Notification: In alarm → select existing SNS topic → <strong>aiops-alerts</strong><br>
+          Alarm name: <code class="il">aiops-error-rate-alarm</code> → Create alarm.</div>
+
+          <div class="lf"><strong>✅ What to look for</strong><ul>
+            <li>Alarm state: <strong>Insufficient data</strong> (normal — not enough data points yet)</li>
+            <li>After invoking the sample app a few more times in normal mode: state changes to <strong>OK</strong></li>
+            <li>The graph shows your ErrorRate metric (blue line) and the red threshold line at 30%</li>
+            <li>With normal mode (5% errors) the line is well below 30% — alarm stays OK</li>
+          </ul></div>
+        </div>
+
+        <div class="ipane" id="ip-s1t">
+          <div class="code-wrap">
+            <div class="code-lbl">HCL · alarm + SNS (for reference — full Terraform in the Terraform tab)</div>
+            <button class="cbtn" onclick="cp(this)">copy</button>
+<pre>resource <span class="str">"aws_sns_topic"</span> <span class="str">"alerts"</span> { name = <span class="str">"aiops-alerts"</span> }
+
+resource <span class="str">"aws_sns_topic_subscription"</span> <span class="str">"email"</span> {
+  topic_arn = aws_sns_topic.alerts.arn
+  protocol  = <span class="str">"email"</span>
+  endpoint  = var.alert_email   <span class="cm"># confirm the subscription email before testing</span>
+}
+
+resource <span class="str">"aws_cloudwatch_metric_alarm"</span> <span class="str">"error_rate"</span> {
+  alarm_name          = <span class="str">"aiops-error-rate-alarm"</span>
+  namespace           = <span class="str">"AIOpsDemo"</span>
+  metric_name         = <span class="str">"ErrorRate"</span>
+  dimensions          = { Service = <span class="str">"order-processor"</span> }
+  statistic           = <span class="str">"Average"</span>
+  period              = <span class="num">60</span>
+  evaluation_periods  = <span class="num">1</span>
+  threshold           = <span class="num">30</span>
+  comparison_operator = <span class="str">"GreaterThanThreshold"</span>
+  treat_missing_data  = <span class="str">"notBreaching"</span>
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  ok_actions          = [aws_sns_topic.alerts.arn]
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Brain Lambda -->
+  <div class="step-group">
+    <div class="step-group-title">Part 2 — Deploy the AI brain Lambda</div>
+
+    <div class="step" id="s2">
+      <div class="step-hdr" onclick="tog('s2')">
+        <div class="step-num">2</div>
+        <div class="step-title">Create IAM role and deploy aiops-brain Lambda</div>
+        <span class="step-badge sb-aws">Lambda · IAM · Bedrock · DynamoDB</span>
+        <span class="step-badge sb-time">15 min</span>
+        <span class="step-tog" id="tg-s2">＋</span>
+      </div>
+      <div class="step-body" id="bd-s2">
+        <div class="why"><div class="why-icon">🎯</div><div><strong>What this Lambda does — the full loop in one function</strong>When SNS triggers it, the brain Lambda: (1) reads the alarm name and pulls the last 10 minutes of ErrorRate metrics from CloudWatch, (2) calls Claude Haiku with that context to get a classification (noise/incident/outage) and a recommended playbook, (3) if auto-remediable — executes the playbook (for this lab: invokes the sample app in normal mode to "restart" it), (4) waits 60 seconds and checks if the alarm cleared, (5) stores the incident record in DynamoDB, (6) publishes a plain-English incident report to SNS. One Lambda, the complete AIOps loop.</div></div>
+
+        <div class="itabs">
+          <button class="itb on" onclick="isw('s2c','s2',this)">Console Setup</button>
+          <button class="itb" onclick="isw('s2tf','s2',this)">⚡ Terraform</button>
+          <button class="itb" onclick="isw('s2k','s2',this)">Lambda Code</button>
+        </div>
+
+        <div class="ipane on" id="ip-s2c">
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px">A — Create IAM role</div>
+          <div class="nav-path">IAM <span class="ns">›</span> Roles <span class="ns">›</span> Create role <span class="ns">›</span> AWS service → Lambda</div>
+          <div class="fr"><span class="fk">Role name</span><span class="fv">aiops-brain-role</span></div>
+          <div style="font-size:13px;color:var(--ink2);margin:8px 0">Attach these managed policies:</div>
+          <div style="font-family:var(--mono);font-size:12px;background:var(--bg3);border-radius:6px;padding:10px 14px;margin:6px 0;line-height:2">
+            AWSLambdaBasicExecutionRole<br>
+            AmazonBedrockFullAccess<br>
+            CloudWatchReadOnlyAccess<br>
+            AmazonDynamoDBFullAccess<br>
+            AmazonSNSFullAccess<br>
+            AWSLambdaRole  <span style="color:var(--ink3);font-size:11px">(so aiops-brain can invoke aiops-sample-app)</span>
+          </div>
+
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px">B — Create DynamoDB table</div>
+          <div class="nav-path">DynamoDB <span class="ns">›</span> Create table</div>
+          <div class="fr"><span class="fk">Table name</span><span class="fv">aiops-incidents</span></div>
+          <div class="fr"><span class="fk">Partition key</span><span class="fv">incident_id (String)</span></div>
+          <div class="fr"><span class="fk">Capacity mode</span><span class="fv">On-demand</span></div>
+
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px">C — Create the brain Lambda</div>
+          <div class="nav-path">Lambda <span class="ns">›</span> Create function <span class="ns">›</span> Author from scratch</div>
+          <div class="fr"><span class="fk">Function name</span><span class="fv">aiops-brain</span></div>
+          <div class="fr"><span class="fk">Runtime</span><span class="fv">Python 3.12</span></div>
+          <div class="fr"><span class="fk">Role</span><span class="fv">Use existing role → aiops-brain-role</span></div>
+          <div class="fr"><span class="fk">Memory</span><span class="fv">512 MB</span></div>
+          <div class="fr"><span class="fk">Timeout</span><span class="fv">3 minutes</span></div>
+          <div style="font-size:13px;color:var(--ink2);margin-top:10px">Paste the code from the "Lambda Code" tab. Click <strong>Deploy</strong>.</div>
+          <div style="font-size:13px;color:var(--ink2);margin-top:8px">Configuration → Environment variables → Add:</div>
+          <div class="fr"><span class="fk">INCIDENT_TABLE</span><span class="fv">aiops-incidents</span></div>
+          <div class="fr"><span class="fk">SNS_TOPIC_ARN</span><span class="fv">arn of aiops-alerts</span></div>
+          <div class="fr"><span class="fk">SAMPLE_APP_NAME</span><span class="fv">aiops-sample-app</span></div>
+
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px">D — Wire SNS → aiops-brain</div>
+          <div class="nav-path">SNS <span class="ns">›</span> aiops-alerts <span class="ns">›</span> Create subscription</div>
+          <div class="fr"><span class="fk">Protocol</span><span class="fv">AWS Lambda</span></div>
+          <div class="fr"><span class="fk">Endpoint</span><span class="fv">ARN of aiops-brain</span></div>
+          <div style="font-size:13px;color:var(--ink2);margin-top:8px">Also add the Lambda resource policy (required for SNS to invoke Lambda):</div>
+          <div class="nav-path">Lambda <span class="ns">›</span> aiops-brain <span class="ns">›</span> Configuration <span class="ns">›</span> Resource-based policy <span class="ns">›</span> Add permissions</div>
+          <div class="fr"><span class="fk">Policy statement ID</span><span class="fv">AllowSNSInvoke</span></div>
+          <div class="fr"><span class="fk">Principal</span><span class="fv">sns.amazonaws.com</span></div>
+          <div class="fr"><span class="fk">Action</span><span class="fv">lambda:InvokeFunction</span></div>
+          <div class="fr"><span class="fk">Source ARN</span><span class="fv">arn of aiops-alerts SNS topic</span></div>
+
+          <div class="lf"><strong>✅ Confirm wiring is correct</strong><ul>
+            <li>SNS → aiops-alerts → Subscriptions: two subscriptions — Email (Confirmed) and Lambda (aiops-brain)</li>
+            <li>Lambda → aiops-brain → Configuration → Resource-based policy: shows AllowSNSInvoke statement</li>
+            <li>Lambda → aiops-brain → Configuration → Environment variables: 3 vars listed</li>
+            <li>DynamoDB → aiops-incidents → Status: Active</li>
+          </ul></div>
+        </div>
+
+        <div class="ipane" id="ip-s2tf">
+          <div class="why"><div class="why-icon">🎯</div><div><strong>Recommended: use the full Terraform tab instead</strong> The Terraform tab deploys <em>everything</em> — SNS, alarm, IAM, DynamoDB, sample app, and brain Lambda — in one <code class="il">terraform apply</code>. This snippet is here if you want to inspect the individual resources or add them to an existing Terraform workspace.</div></div>
+          <div class="code-wrap">
+            <div class="code-lbl">HCL · IAM role for aiops-brain (minimum permissions)</div>
+            <button class="cbtn" onclick="cp(this)">copy</button>
+<pre>resource <span class="str">"aws_iam_role"</span> <span class="str">"brain"</span> {
+  name = <span class="str">"aiops-brain-role"</span>
+  assume_role_policy = jsonencode({
+    Version = <span class="str">"2012-10-17"</span>
+    Statement = [{ Effect = <span class="str">"Allow"</span>, Principal = { Service = <span class="str">"lambda.amazonaws.com"</span> },
+                   Action = <span class="str">"sts:AssumeRole"</span> }]
+  })
+}
+resource <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"brain_basic"</span> {
+  role       = aws_iam_role.brain.name
+  policy_arn = <span class="str">"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"</span>
+}
+resource <span class="str">"aws_iam_role_policy"</span> <span class="str">"brain_inline"</span> {
+  name = <span class="str">"aiops-brain-permissions"</span>
+  role = aws_iam_role.brain.id
+  policy = jsonencode({
+    Version = <span class="str">"2012-10-17"</span>
+    Statement = [
+      { Effect = <span class="str">"Allow"</span>,
+        Action = [<span class="str">"cloudwatch:GetMetricStatistics"</span>, <span class="str">"cloudwatch:DescribeAlarms"</span>],
+        Resource = <span class="str">"*"</span> },
+      { Effect = <span class="str">"Allow"</span>,
+        Action = <span class="str">"bedrock:InvokeModel"</span>,
+        Resource = <span class="str">"arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-4-5-20251001"</span> },
+      { Effect = <span class="str">"Allow"</span>,
+        Action = [<span class="str">"dynamodb:PutItem"</span>, <span class="str">"dynamodb:Scan"</span>],
+        Resource = aws_dynamodb_table.incidents.arn },
+      { Effect = <span class="str">"Allow"</span>,
+        Action = <span class="str">"sns:Publish"</span>,
+        Resource = aws_sns_topic.alerts.arn },
+      { Effect = <span class="str">"Allow"</span>,
+        Action = <span class="str">"lambda:InvokeFunction"</span>,
+        Resource = aws_lambda_function.sample_app.arn },
+    ]
+  })
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-lbl">HCL · DynamoDB + brain Lambda + SNS subscription</div>
+            <button class="cbtn" onclick="cp(this)">copy</button>
+<pre>resource <span class="str">"aws_dynamodb_table"</span> <span class="str">"incidents"</span> {
+  name         = <span class="str">"aiops-incidents"</span>
+  billing_mode = <span class="str">"PAY_PER_REQUEST"</span>
+  hash_key     = <span class="str">"incident_id"</span>
+  attribute { name = <span class="str">"incident_id"</span>; type = <span class="str">"S"</span> }
+}
+
+resource <span class="str">"aws_lambda_function"</span> <span class="str">"brain"</span> {
+  function_name    = <span class="str">"aiops-brain"</span>
+  filename         = <span class="str">"lambda_zips/aiops_brain.zip"</span>
+  source_code_hash = filebase64sha256(<span class="str">"lambda_zips/aiops_brain.zip"</span>)
+  handler          = <span class="str">"aiops_brain.lambda_handler"</span>
+  runtime          = <span class="str">"python3.12"</span>
+  role             = aws_iam_role.brain.arn
+  timeout          = <span class="num">180</span>
+  memory_size      = <span class="num">512</span>
+  environment {
+    variables = {
+      INCIDENT_TABLE  = aws_dynamodb_table.incidents.name
+      SNS_TOPIC_ARN   = aws_sns_topic.alerts.arn
+      SAMPLE_APP_NAME = aws_lambda_function.sample_app.function_name
+    }
+  }
+}
+
+<span class="cm"># Allow SNS to invoke the brain Lambda</span>
+resource <span class="str">"aws_lambda_permission"</span> <span class="str">"sns_invoke_brain"</span> {
+  statement_id  = <span class="str">"AllowSNS"</span>
+  action        = <span class="str">"lambda:InvokeFunction"</span>
+  function_name = aws_lambda_function.brain.function_name
+  principal     = <span class="str">"sns.amazonaws.com"</span>
+  source_arn    = aws_sns_topic.alerts.arn
+}
+
+<span class="cm"># Wire: SNS → brain Lambda</span>
+resource <span class="str">"aws_sns_topic_subscription"</span> <span class="str">"brain"</span> {
+  topic_arn = aws_sns_topic.alerts.arn
+  protocol  = <span class="str">"lambda"</span>
+  endpoint  = aws_lambda_function.brain.arn
+}
+
+resource <span class="str">"aws_cloudwatch_log_group"</span> <span class="str">"brain"</span> {
+  name              = <span class="str">"/aws/lambda/aiops-brain"</span>
+  retention_in_days = <span class="num">7</span>
+}</pre>
+          </div>
+          <div class="callout c-info" style="margin-top:6px">
+            <span class="ci">ℹ️</span>
+            <div class="cb">After <code class="il">terraform apply</code>: zip <code class="il">lambda_src/aiops_brain.py</code> → <code class="il">lambda_zips/aiops_brain.zip</code> first. The brain Lambda code is in the "Lambda Code" tab. Save it as <code class="il">lambda_src/aiops_brain.py</code>.</div>
+          </div>
+        </div>
+
+        <div class="ipane" id="ip-s2k">
+          <div class="code-wrap">
+            <div class="code-lbl">python · aiops-brain Lambda · the complete AIOps loop</div>
+            <button class="cbtn" onclick="cp(this)">copy</button>
+<pre><span class="kw">import</span> json, time, os, uuid, boto3
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime, timedelta
+
+bedrock  = boto3.client(<span class="str">"bedrock-runtime"</span>, region_name=<span class="str">"us-east-1"</span>)
+cw       = boto3.client(<span class="str">"cloudwatch"</span>,        region_name=<span class="str">"us-east-1"</span>)
+dynamodb = boto3.resource(<span class="str">"dynamodb"</span>)
+sns      = boto3.client(<span class="str">"sns"</span>,                region_name=<span class="str">"us-east-1"</span>)
+lam      = boto3.client(<span class="str">"lambda"</span>,             region_name=<span class="str">"us-east-1"</span>)
+
+TABLE     = os.environ[<span class="str">"INCIDENT_TABLE"</span>]
+TOPIC_ARN = os.environ[<span class="str">"SNS_TOPIC_ARN"</span>]
+APP_NAME  = os.environ[<span class="str">"SAMPLE_APP_NAME"</span>]
+
+
+<span class="cm"># ── Step 1: Pull last 10 min of metrics ───────────────────────────</span>
+<span class="kw">def</span> <span class="fn">get_current_metrics</span>() -> dict:
+    end   = datetime.utcnow()
+    start = end - timedelta(minutes=<span class="num">10</span>)
+    result = {}
+    <span class="kw">for</span> metric <span class="kw">in</span> [<span class="str">"ErrorRate"</span>, <span class="str">"Latency"</span>, <span class="str">"RequestCount"</span>]:
+        resp = cw.get_metric_statistics(
+            Namespace=<span class="str">"AIOpsDemo"</span>, MetricName=metric,
+            Dimensions=[{<span class="str">"Name"</span>: <span class="str">"Service"</span>, <span class="str">"Value"</span>: <span class="str">"order-processor"</span>}],
+            StartTime=start, EndTime=end,
+            Period=<span class="num">60</span>, Statistics=[<span class="str">"Average"</span>]
+        )
+        pts = sorted(resp[<span class="str">"Datapoints"</span>], key=<span class="kw">lambda</span> x: x[<span class="str">"Timestamp"</span>])
+        result[metric] = <span class="fn">round</span>(pts[-<span class="num">1</span>][<span class="str">"Average"</span>], <span class="num">2</span>) <span class="kw">if</span> pts <span class="kw">else</span> <span class="num">0</span>
+    <span class="kw">return</span> result
+
+
+<span class="cm"># ── Step 2: Ask Claude what it means ──────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">classify_with_claude</span>(alarm_name: str, metrics: dict) -> dict:
+    prompt = <span class="str">f"""You are an SRE analyzing a CloudWatch alarm.
+
+Alarm: {alarm_name}
+Current metrics (last 10 minutes):
+  ErrorRate:    {metrics.get('ErrorRate', 0):.1f}%
+  Latency:      {metrics.get('Latency', 0):.0f}ms
+  RequestCount: {metrics.get('RequestCount', 0):.0f} requests/min
+
+Classify this situation. Respond ONLY with valid JSON, no other text:
+{{
+  "classification": "noise" or "incident" or "outage",
+  "severity": "low" or "medium" or "high" or "critical",
+  "probable_cause": "one sentence",
+  "recommended_playbook": "restart_app" or "scale_up" or "escalate",
+  "auto_remediate": true or false,
+  "summary": "two sentence plain-English summary for an engineer"
+}}"""</span>
+
+    resp = bedrock.invoke_model(
+        modelId=<span class="str">"anthropic.claude-haiku-4-5-20251001"</span>,
+        body=json.dumps({
+            <span class="str">"anthropic_version"</span>: <span class="str">"bedrock-2023-05-31"</span>,
+            <span class="str">"max_tokens"</span>: <span class="num">400</span>,
+            <span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: prompt}]
+        })
+    )
+    text = json.loads(resp[<span class="str">"body"</span>].read())[<span class="str">"content"</span>][<span class="num">0</span>][<span class="str">"text"</span>]
+    <span class="kw">return</span> json.loads(text)
+
+
+<span class="cm"># ── Step 3: Execute playbook ──────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">execute_playbook</span>(playbook: str) -> str:
+    <span class="kw">if</span> playbook == <span class="str">"restart_app"</span>:
+        <span class="cm"># In a real system: ecs.update_service(forceNewDeployment=True)</span>
+        <span class="cm"># For this lab: invoke sample app in normal mode to "heal" it</span>
+        lam.invoke(FunctionName=APP_NAME,
+                   InvocationType=<span class="str">"Event"</span>,   <span class="cm"># async — don't wait</span>
+                   Payload=json.dumps({<span class="str">"mode"</span>: <span class="str">"normal"</span>}).encode())
+        <span class="kw">return</span> <span class="str">"Triggered app restart — invoking sample app in normal mode"</span>
+    <span class="kw">elif</span> playbook == <span class="str">"scale_up"</span>:
+        <span class="cm"># In a real system: autoscaling.set_desired_capacity(...)</span>
+        <span class="kw">return</span> <span class="str">"Scale-up playbook noted — no ASG configured in lab"</span>
+    <span class="kw">else</span>:
+        <span class="kw">return</span> <span class="str">"Escalation required — no auto-remediation taken"</span>
+
+
+<span class="cm"># ── Step 4: Verify alarm cleared ─────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">check_alarm_state</span>(alarm_name: str) -> str:
+    resp   = cw.describe_alarms(AlarmNames=[alarm_name])
+    alarms = resp[<span class="str">"MetricAlarms"</span>]
+    <span class="kw">return</span> alarms[<span class="num">0</span>][<span class="str">"StateValue"</span>] <span class="kw">if</span> alarms <span class="kw">else</span> <span class="str">"UNKNOWN"</span>
+
+
+<span class="cm"># ── Main handler ──────────────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">lambda_handler</span>(event, context):
+    <span class="cm"># Parse SNS message from CloudWatch alarm</span>
+    msg        = json.loads(event[<span class="str">"Records"</span>][<span class="num">0</span>][<span class="str">"Sns"</span>][<span class="str">"Message"</span>])
+    alarm_name = msg.get(<span class="str">"AlarmName"</span>, <span class="str">"unknown"</span>)
+    new_state  = msg.get(<span class="str">"NewStateValue"</span>, <span class="str">"ALARM"</span>)
+    incident_id = str(uuid.uuid4())[:8]
+
+    <span class="cm"># Only run when alarm transitions TO alarm state</span>
+    <span class="kw">if</span> new_state != <span class="str">"ALARM"</span>:
+        print(<span class="str">f"Alarm {alarm_name} → {new_state}. No action needed."</span>)
+        <span class="kw">return</span>
+
+    print(<span class="str">f"🚨 Incident {incident_id}: {alarm_name} in ALARM"</span>)
+    t_start = time.time()
+
+    <span class="cm"># 1. Get context</span>
+    metrics = get_current_metrics()
+    print(<span class="str">f"📊 Metrics: {metrics}"</span>)
+
+    <span class="cm"># 2. Classify</span>
+    analysis = classify_with_claude(alarm_name, metrics)
+    print(<span class="str">f"🧠 Claude says: {analysis}"</span>)
+
+    <span class="cm"># 3. Act</span>
+    action_taken = <span class="str">"none"</span>
+    <span class="kw">if</span> analysis.get(<span class="str">"auto_remediate"</span>) <span class="kw">and</span> analysis[<span class="str">"classification"</span>] != <span class="str">"noise"</span>:
+        action_taken = execute_playbook(analysis[<span class="str">"recommended_playbook"</span>])
+        print(<span class="str">f"⚡ Action: {action_taken}"</span>)
+        time.sleep(<span class="num">60</span>)  <span class="cm"># wait for remediation to take effect</span>
+
+    <span class="cm"># 4. Verify</span>
+    final_state = check_alarm_state(alarm_name)
+    recovered   = final_state == <span class="str">"OK"</span>
+    mttr_secs   = <span class="fn">round</span>(time.time() - t_start)
+    print(<span class="str">f"✅ Alarm state after remediation: {final_state}. MTTR: {mttr_secs}s"</span>)
+
+    <span class="cm"># 5. Store in DynamoDB</span>
+    dynamodb.Table(TABLE).put_item(Item={
+        <span class="str">"incident_id"</span>:  incident_id,
+        <span class="str">"alarm_name"</span>:   alarm_name,
+        <span class="str">"timestamp"</span>:    datetime.utcnow().isoformat(),
+        <span class="str">"classification"</span>: analysis[<span class="str">"classification"</span>],
+        <span class="str">"severity"</span>:     analysis[<span class="str">"severity"</span>],
+        <span class="str">"probable_cause"</span>: analysis[<span class="str">"probable_cause"</span>],
+        <span class="str">"playbook"</span>:     analysis[<span class="str">"recommended_playbook"</span>],
+        <span class="str">"action_taken"</span>: action_taken,
+        <span class="str">"recovered"</span>:    recovered,
+        <span class="str">"mttr_seconds"</span>: mttr_secs,
+    })
+
+    <span class="cm"># 6. Send incident report</span>
+    status_icon = <span class="str">"✅"</span> <span class="kw">if</span> recovered <span class="kw">else</span> <span class="str">"❌"</span>
+    report = <span class="str">f"""
+AIOps Incident Report — {incident_id}
+{'='*45}
+Alarm:          {alarm_name}
+Classification: {analysis['classification'].upper()} ({analysis['severity']} severity)
+Probable cause: {analysis['probable_cause']}
+
+AI Summary:
+{analysis['summary']}
+
+Action taken:  {action_taken}
+Recovered:     {status_icon} {final_state}
+MTTR:          {mttr_secs} seconds
+
+Metrics at time of incident:
+  Error rate:  {metrics.get('ErrorRate', 0):.1f}%
+  Latency:     {metrics.get('Latency', 0):.0f}ms
+  Req/min:     {metrics.get('RequestCount', 0):.0f}
+"""</span>
+    sns.publish(TopicArn=TOPIC_ARN,
+                Subject=<span class="str">f"AIOps Report: {analysis['classification'].upper()} — {alarm_name}"</span>,
+                Message=report)
+    print(report)
+    <span class="kw">return</span> {<span class="str">"incident_id"</span>: incident_id, <span class="str">"classification"</span>: analysis[<span class="str">"classification"</span>], <span class="str">"recovered"</span>: recovered}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Test -->
+  <div class="step-group">
+    <div class="step-group-title">Part 3 — Trigger and explore</div>
+
+    <div class="step" id="s3">
+      <div class="step-hdr" onclick="tog('s3')">
+        <div class="step-num">3</div>
+        <div class="step-title">Trigger the full pipeline — spike traffic and watch it self-heal</div>
+        <span class="step-badge sb-aws">CloudWatch · Lambda · Bedrock · DynamoDB</span>
+        <span class="step-badge sb-time">15 min</span>
+        <span class="step-tog" id="tg-s3">＋</span>
+      </div>
+      <div class="step-body" id="bd-s3">
+        <div class="why"><div class="why-icon">🎯</div><div><strong>What is about to happen — the full loop in 2 minutes</strong>You invoke the sample app in "spike" mode 5 times → ErrorRate jumps to ~60% → CloudWatch alarm fires within 1 minute → SNS publishes to aiops-brain Lambda → Lambda pulls metrics, calls Claude, gets classification, runs restart playbook, waits 60 seconds, checks recovery, stores to DynamoDB, sends you an email report. You do nothing after the first invoke. Watch it run.</div></div>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px">A — Trigger the spike (5 rapid invocations)</div>
+        <div class="nav-path">Lambda <span class="ns">›</span> aiops-sample-app <span class="ns">›</span> Test</div>
+        <div style="font-size:13px;color:var(--ink2);margin:6px 0">Change the test event to <code class="il">{"mode": "spike"}</code> and click <strong>Test 5 times quickly</strong>. Or use the CLI one-liner:</div>
+        <div class="code-wrap">
+          <button class="cbtn" onclick="cp(this)">copy</button>
+<pre><span class="cm"># Fire 5 spike invocations quickly</span>
+<span class="kw">for</span> i <span class="kw">in</span> {1..5}; <span class="kw">do</span>
+  aws lambda invoke \
+    --function-name aiops-sample-app \
+    --payload <span class="str">'{"mode":"spike"}'</span> \
+    --cli-binary-format raw-in-base64-out \
+    /dev/null
+  echo <span class="str">"Invocation $i sent"</span>
+<span class="kw">done</span></pre>
+        </div>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px">B — Watch the alarm fire (CloudWatch)</div>
+        <div class="nav-path">CloudWatch <span class="ns">›</span> Alarms <span class="ns">›</span> aiops-error-rate-alarm</div>
+        <div style="font-size:13px;color:var(--ink2);margin:4px 0">The alarm evaluates every minute. After the spike invocations, the average ErrorRate for that minute will be ~60%. Within 60–90 seconds the alarm transitions: <strong>OK → ALARM</strong>. The graph shows the blue line jumping above the red 30% threshold line.</div>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px">C — Watch the brain Lambda run (CloudWatch Logs)</div>
+        <div class="nav-path">CloudWatch <span class="ns">›</span> Log groups <span class="ns">›</span> /aws/lambda/aiops-brain <span class="ns">›</span> latest log stream</div>
+        <div style="font-size:13px;color:var(--ink2);margin:4px 0">Watch the log lines appear in real-time. You will see:</div>
+        <div style="font-family:var(--mono);font-size:12px;background:#0c1824;color:#c8e0f0;border-radius:8px;padding:14px 16px;margin:8px 0;line-height:1.8">
+          🚨 Incident a3f8b2c1: aiops-error-rate-alarm in ALARM<br>
+          📊 Metrics: {'ErrorRate': 62.0, 'Latency': 714, 'RequestCount': 5}<br>
+          🧠 Claude says: {'classification': 'incident', 'severity': 'high', 'probable_cause': 'Error rate spiked to 62%, far above normal baseline...', 'recommended_playbook': 'restart_app', 'auto_remediate': true}<br>
+          ⚡ Action: Triggered app restart — invoking sample app in normal mode<br>
+          ✅ Alarm state after remediation: OK. MTTR: 73s
+        </div>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px">D — Explore the stored incident in DynamoDB</div>
+        <div class="nav-path">DynamoDB <span class="ns">›</span> aiops-incidents <span class="ns">›</span> Explore table items</div>
+        <div style="font-size:13px;color:var(--ink2);margin:4px 0">Click the incident record. See all fields: incident_id, classification, probable_cause, action_taken, recovered (true/false), mttr_seconds. This is your pattern store — after 20+ incidents it becomes a knowledge base for faster future classification.</div>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px">E — Check your email</div>
+        <div style="font-size:13px;color:var(--ink2);margin:4px 0">The SNS email contains the full incident report generated by Claude: severity, probable cause, action taken, recovery status, MTTR, and metric values. This is what you'd wake up to instead of a pager alert with no context.</div>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px">F — Force-trigger without waiting for real spike (shortcut)</div>
+        <div style="font-size:13px;color:var(--ink2);margin:4px 0">If the alarm didn't fire or you want to test again immediately:</div>
+        <div class="code-wrap">
+          <button class="cbtn" onclick="cp(this)">copy</button>
+<pre><span class="cm"># Force the alarm into ALARM state manually</span>
+aws cloudwatch set-alarm-state \
+  --alarm-name aiops-error-rate-alarm \
+  --state-value ALARM \
+  --state-reason <span class="str">"Manual test trigger"</span>
+<span class="cm"># This immediately fires SNS → Lambda without waiting for real metrics</span></pre>
+        </div>
+
+        <div class="lf"><strong>✅ What a successful run looks like</strong><ul>
+          <li><strong>CloudWatch alarm</strong>: transitions OK → ALARM → OK (within ~2 minutes)</li>
+          <li><strong>Lambda logs</strong>: all 6 log lines appear — incident ID, metrics, Claude classification, action, alarm state, MTTR</li>
+          <li><strong>DynamoDB</strong>: one new record with <code class="il">recovered: true</code> and <code class="il">mttr_seconds</code> in the 60–120 range</li>
+          <li><strong>Email</strong>: structured incident report with Claude's probable cause analysis</li>
+          <li><strong>Bedrock</strong>: Invocation metrics tab shows 1 invocation (one Claude call per incident)</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What you learned -->
+  <div class="learned">
+    <div class="learned-title">What you built and what it means</div>
+    <ul>
+      <li><strong>EMF is the right way to emit custom metrics from Lambda</strong> — print structured JSON to stdout, CloudWatch extracts numbers for free. No PutMetricData API calls, no SDK overhead, no extra cost.</li>
+      <li><strong>AI as classifier, not actor</strong> — Claude read the metric values and returned a structured JSON label. It did not call any AWS APIs. A deterministic Lambda used that label to pick a playbook. This separation is what makes AIOps safe: the AI provides understanding, code provides action.</li>
+      <li><strong>Static threshold is fine for a known spike pattern</strong> — anomaly detection is more powerful but requires weeks of training data. For a lab, for a known failure mode, a threshold is more predictable. Use anomaly detection in production after your baseline is established.</li>
+      <li><strong>Verification closes the loop</strong> — the brain Lambda waits 60 seconds after the fix and checks whether the alarm cleared. "I ran the playbook" is not the same as "the system is healthy." This check is what separates automation from fire-and-forget.</li>
+      <li><strong>DynamoDB as a pattern store</strong> — each incident writes a record. After 20+ incidents, you can scan the table and ask: which alarms repeat most? What is average MTTR by classification? Which playbooks succeed? This data is the foundation for making the system smarter over time.</li>
+      <li><strong>MTTR in seconds, not minutes</strong> — detection-to-report took ~75 seconds in the lab. A human SRE waking up, loading dashboards, diagnosing, and writing a report takes 20–40 minutes. The value of AIOps is not replacing the human — it's ensuring the human wakes up to an already-diagnosed, already-fixed, already-documented incident.</li>
+    </ul>
+    <div class="learned-next">
+      <strong>What to build next</strong> — replace the sample app "restart" with a real ECS <code class="il">update_service(forceNewDeployment=True)</code> call. Add a second playbook for memory issues (scale up ASG). Add a human approval gate for high-severity incidents (SNS → wait for reply before acting). Add a weekly Lambda that scans DynamoDB and asks Claude to summarise MTTR trends. Each addition is incremental — the core loop you built today stays unchanged.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TERRAFORM ═══════════════════ -->
+<div class="pane" id="pane-terraform">
+  <div class="eyebrow">Quick build · 8 min</div>
+  <div class="s-title">Terraform — deploy everything, then explore</div>
+  <div class="s-sub">One file. One apply. Spend your time in the console exploring features, not clicking through setup wizards.</div>
+
+  <div class="callout c-warn">
+    <span class="ci">⚠️</span>
+    <div class="cb"><strong>One manual step Terraform cannot do</strong> Enable Bedrock model access in the console first: Bedrock → Model access → Modify → Enable Claude Haiku 3 → Save. Without this, every Bedrock call fails with AccessDeniedException.</div>
+  </div>
+
+  <div class="step-group">
+    <div class="step-group-title">Quick start — 3 terminal commands</div>
+
+    <div class="callout c-warn">
+      <span class="ci">⚠️</span>
+      <div class="cb"><strong>One manual step first</strong> Enable Bedrock model access in the console: Bedrock → Model access → Modify → enable Claude Haiku 3 → Save. Cannot be automated. Takes 2 min.</div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-lbl">bash · deploy</div>
+      <button class="cbtn" onclick="cp(this)">copy</button>
+<pre><span class="cm"># 1. Create project and zip Lambdas</span>
+mkdir aiops-lab && cd aiops-lab
+mkdir -p lambda_src lambda_zips
+<span class="cm"># Save sample_app.py and aiops_brain.py from the Lambda Code tabs into lambda_src/</span>
+zip -j lambda_zips/sample_app.zip  lambda_src/sample_app.py
+zip -j lambda_zips/aiops_brain.zip lambda_src/aiops_brain.py
+
+<span class="cm"># 2. Deploy everything</span>
+export TF_VAR_alert_email="your@email.com"
+terraform init && terraform apply -auto-approve
+
+<span class="cm"># 3. Confirm SNS subscription emails (check inbox, click 2 links)</span></pre>
+    </div>
+
+    <div class="code-wrap" style="margin-top:12px">
+      <div class="code-lbl">bash · seed metrics — pick one approach</div>
+      <button class="cbtn" onclick="cp(this)">copy</button>
+<pre><span class="cm"># Option A: local Python script (no Lambda invocation needed)</span>
+pip install boto3
+python seed_metrics.py          <span class="cm"># normal mode — copy script from Prerequisites tab</span>
+
+<span class="cm"># Option B: invoke the Lambda</span>
+<span class="kw">for</span> i <span class="kw">in</span> {1..10}; <span class="kw">do</span>
+  aws lambda invoke --function-name aiops-sample-app \
+    --payload <span class="str">'{"mode":"normal"}'</span> --cli-binary-format raw-in-base64-out /dev/null
+<span class="kw">done</span>
+
+<span class="cm"># ── Trigger spike (both options) ──────────────────────────────────</span>
+<span class="cm"># Option A:</span>
+python seed_metrics.py spike
+
+<span class="cm"># Option B:</span>
+<span class="kw">for</span> i <span class="kw">in</span> {1..5}; <span class="kw">do</span>
+  aws lambda invoke --function-name aiops-sample-app \
+    --payload <span class="str">'{"mode":"spike"}'</span> --cli-binary-format raw-in-base64-out /dev/null
+<span class="kw">done</span>
+
+<span class="cm"># ── Or skip metric seeding entirely — force-trigger immediately ───</span>
+aws cloudwatch set-alarm-state \
+  --alarm-name aiops-error-rate-alarm \
+  --state-value ALARM --state-reason <span class="str">"Manual test"</span>
+
+<span class="cm"># ── Watch logs live ───────────────────────────────────────────────</span>
+aws logs tail /aws/lambda/aiops-brain --follow
+
+<span class="cm"># ── Destroy when done ─────────────────────────────────────────────</span>
+terraform destroy -auto-approve</pre>
+    </div>
+  </div>
+
+  <div class="step-group" style="margin-top:24px">
+    <div class="step-group-title">main.tf — the complete Terraform (one file)</div>
+
+    <div class="code-wrap">
+      <div class="code-lbl">HCL · main.tf</div>
+      <button class="cbtn" onclick="cp(this)">copy</button>
+<pre>terraform {
+  required_version = ">= 1.6"
+  required_providers {
+    aws = { source = "hashicorp/aws", version = "~> 5.0" }
+  }
+}
+
+provider "aws" {
+  region = var.region
+  default_tags { tags = { Project = "aiops-lab", ManagedBy = "terraform" } }
+}
+
+variable "region"      { default = "us-east-1" }
+variable "alert_email" { type = string }   <span class="cm"># export TF_VAR_alert_email=you@example.com</span>
+
+data "aws_caller_identity" "current" {}
+locals { account_id = data.aws_caller_identity.current.account_id }
+
+
+<span class="cm"># ── SNS: receives alarm, triggers Lambda, delivers email report ──</span>
+resource "aws_sns_topic" "alerts" { name = "aiops-alerts" }
+
+resource "aws_sns_topic_subscription" "email" {
+  topic_arn = aws_sns_topic.alerts.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+  <span class="cm"># Check inbox and click the confirmation link before testing!</span>
+}
+
+resource "aws_sns_topic_subscription" "brain" {
+  topic_arn = aws_sns_topic.alerts.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.brain.arn
+}
+
+resource "aws_lambda_permission" "sns_invoke_brain" {
+  statement_id  = "AllowSNS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.brain.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.alerts.arn
+}
+
+
+<span class="cm"># ── IAM role for both Lambda functions ───────────────────────────</span>
+resource "aws_iam_role" "lambda" {
+  name = "aiops-brain-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{ Effect = "Allow", Principal = { Service = "lambda.amazonaws.com" },
+                   Action = "sts:AssumeRole" }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "basic" {
+  role       = aws_iam_role.lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy" "brain_inline" {
+  name = "aiops-brain-permissions"
+  role = aws_iam_role.lambda.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      { Effect = "Allow",
+        Action = ["cloudwatch:GetMetricStatistics","cloudwatch:DescribeAlarms"],
+        Resource = "*" },
+      { Effect = "Allow",
+        Action = "bedrock:InvokeModel",
+        Resource = "arn:aws:bedrock:${var.region}::foundation-model/anthropic.claude-haiku-4-5-20251001" },
+      { Effect = "Allow",
+        Action = ["dynamodb:PutItem","dynamodb:Scan"],
+        Resource = aws_dynamodb_table.incidents.arn },
+      { Effect = "Allow",
+        Action = "sns:Publish",
+        Resource = aws_sns_topic.alerts.arn },
+      { Effect = "Allow",
+        Action = "lambda:InvokeFunction",
+        Resource = aws_lambda_function.sample_app.arn },
+    ]
+  })
+}
+
+
+<span class="cm"># ── DynamoDB: incident pattern store ──────────────────────────────</span>
+resource "aws_dynamodb_table" "incidents" {
+  name         = "aiops-incidents"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "incident_id"
+  attribute    { name = "incident_id"; type = "S" }
+}
+
+
+<span class="cm"># ── Lambda: sample app (the thing we observe) ────────────────────</span>
+resource "aws_lambda_function" "sample_app" {
+  function_name    = "aiops-sample-app"
+  filename         = "lambda_zips/sample_app.zip"
+  source_code_hash = filebase64sha256("lambda_zips/sample_app.zip")
+  handler          = "sample_app.lambda_handler"
+  runtime          = "python3.12"
+  role             = aws_iam_role.lambda.arn
+  timeout          = 10
+}
+
+
+<span class="cm"># ── Lambda: aiops-brain (the AI loop) ────────────────────────────</span>
+resource "aws_lambda_function" "brain" {
+  function_name    = "aiops-brain"
+  filename         = "lambda_zips/aiops_brain.zip"
+  source_code_hash = filebase64sha256("lambda_zips/aiops_brain.zip")
+  handler          = "aiops_brain.lambda_handler"
+  runtime          = "python3.12"
+  role             = aws_iam_role.lambda.arn
+  timeout          = 180   <span class="cm"># 3 min — needs time for 60s wait + Bedrock call</span>
+  memory_size      = 512
+  environment {
+    variables = {
+      INCIDENT_TABLE   = aws_dynamodb_table.incidents.name
+      SNS_TOPIC_ARN    = aws_sns_topic.alerts.arn
+      SAMPLE_APP_NAME  = aws_lambda_function.sample_app.function_name
+    }
+  }
+}
+
+
+<span class="cm"># ── CloudWatch alarm: watches ErrorRate metric ────────────────────</span>
+resource "aws_cloudwatch_metric_alarm" "error_rate" {
+  alarm_name          = "aiops-error-rate-alarm"
+  namespace           = "AIOpsDemo"
+  metric_name         = "ErrorRate"
+  dimensions          = { Service = "order-processor" }
+  statistic           = "Average"
+  period              = 60
+  evaluation_periods  = 1
+  threshold           = 30
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  ok_actions          = [aws_sns_topic.alerts.arn]
+}
+
+<span class="cm"># ── Log groups with retention (avoids indefinite log accumulation) ─</span>
+resource "aws_cloudwatch_log_group" "sample_app" {
+  name              = "/aws/lambda/aiops-sample-app"
+  retention_in_days = 7
+}
+resource "aws_cloudwatch_log_group" "brain" {
+  name              = "/aws/lambda/aiops-brain"
+  retention_in_days = 7
+}
+
+
+<span class="cm"># ── Outputs: printed after terraform apply ───────────────────────</span>
+output "alarm_name"        { value = aws_cloudwatch_metric_alarm.error_rate.alarm_name }
+output "sample_app_name"   { value = aws_lambda_function.sample_app.function_name }
+output "brain_lambda_name" { value = aws_lambda_function.brain.function_name }
+output "dynamodb_table"    { value = aws_dynamodb_table.incidents.name }
+output "next_steps" {
+  value = <<-EOT
+
+  ┌─────────────────────────────────────────────────┐
+  │  Deployed! Follow this order:                   │
+  │                                                 │
+  │  1. Confirm 2 SNS emails (check inbox)          │
+  │  2. Run 10x normal traffic to seed metrics      │
+  │  3. Run 5x spike traffic to trigger alarm       │
+  │  4. Watch: CloudWatch alarm + Lambda logs       │
+  │  5. Check DynamoDB for incident record          │
+  │  6. Read incident report in your email          │
+  │                                                 │
+  │  Destroy: terraform destroy -auto-approve       │
+  └─────────────────────────────────────────────────┘
+  EOT
+}</pre>
+    </div>
+  </div>
+
+  <div class="step-group" style="margin-top:8px">
+    <div class="step-group-title">lambda_src/ — copy sample app source here</div>
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:10px">Copy the sample app code from the Prerequisites tab and the brain Lambda code from The Lab tab. Save as <code class="il">lambda_src/sample_app.py</code> and <code class="il">lambda_src/aiops_brain.py</code>, then run the zip commands.</div>
+    <div class="callout c-green">
+      <span class="ci">✅</span>
+      <div class="cb"><strong>File structure</strong>
+        <div style="font-family:var(--mono);font-size:12px;margin-top:6px;line-height:1.9">
+          aiops-lab/<br>
+          ├── main.tf<br>
+          ├── lambda_src/<br>
+          │   ├── sample_app.py  ← from Prerequisites tab<br>
+          │   └── aiops_brain.py ← from The Lab tab<br>
+          └── lambda_zips/       ← generated by zip commands<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;├── sample_app.zip<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;└── aiops_brain.zip
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ CLEANUP ═══════════════════ -->
+<div class="pane" id="pane-cleanup">
+  <div class="eyebrow">After the lab</div>
+  <div class="s-title">Cleanup</div>
+  <div class="s-sub">All 6 resources. Takes 2 minutes.</div>
+
+  <div class="callout c-info">
+    <span class="ci">ℹ️</span>
+    <div class="cb"><strong>If you used Terraform</strong> — one command: <code class="il">terraform destroy -auto-approve</code>. Done. Skip to the cost table below to verify nothing is left running.</div>
+  </div>
+
+  <div class="step-group" style="margin-top:20px">
+    <div class="step-group-title">Manual cleanup — in this order</div>
+
+    <div class="step" id="cl1">
+      <div class="step-hdr" onclick="tog('cl1')">
+        <div class="step-num" style="background:var(--red)">1</div>
+        <div class="step-title">Delete both Lambda functions</div>
+        <span class="step-tog" id="tg-cl1">＋</span>
+      </div>
+      <div class="step-body" id="bd-cl1">
+        <div class="nav-path">Lambda <span class="ns">›</span> Functions <span class="ns">›</span> select aiops-brain + aiops-sample-app <span class="ns">›</span> Actions <span class="ns">›</span> Delete</div>
+        <div style="font-size:13px;color:var(--ink2);margin-top:6px">Lambda functions are free to keep (pay per invocation only), but delete them to keep your account clean. Their log groups remain until you delete them separately.</div>
+      </div>
+    </div>
+
+    <div class="step" id="cl2">
+      <div class="step-hdr" onclick="tog('cl2')">
+        <div class="step-num" style="background:var(--red)">2</div>
+        <div class="step-title">Delete CloudWatch alarm and log groups</div>
+        <span class="step-tog" id="tg-cl2">＋</span>
+      </div>
+      <div class="step-body" id="bd-cl2">
+        <div class="nav-path">CloudWatch <span class="ns">›</span> Alarms <span class="ns">›</span> aiops-error-rate-alarm <span class="ns">›</span> Actions <span class="ns">›</span> Delete</div>
+        <div style="font-size:13px;color:var(--ink2);margin:8px 0">Then delete log groups:</div>
+        <div class="nav-path">CloudWatch <span class="ns">›</span> Log groups <span class="ns">›</span> /aws/lambda/aiops-brain <span class="ns">›</span> Actions <span class="ns">›</span> Delete log group</div>
+        <div class="nav-path">CloudWatch <span class="ns">›</span> Log groups <span class="ns">›</span> /aws/lambda/aiops-sample-app <span class="ns">›</span> Actions <span class="ns">›</span> Delete log group</div>
+        <div style="font-size:13px;color:var(--ink2);margin-top:6px">Log groups default to <strong>Never expire</strong> — they cost $0.03/GB/month forever if you don't delete them.</div>
+      </div>
+    </div>
+
+    <div class="step" id="cl3">
+      <div class="step-hdr" onclick="tog('cl3')">
+        <div class="step-num" style="background:var(--red)">3</div>
+        <div class="step-title">Delete SNS topic + DynamoDB table + IAM role</div>
+        <span class="step-tog" id="tg-cl3">＋</span>
+      </div>
+      <div class="step-body" id="bd-cl3">
+        <div class="nav-path">SNS <span class="ns">›</span> Topics <span class="ns">›</span> aiops-alerts <span class="ns">›</span> Delete</div>
+        <div class="nav-path">DynamoDB <span class="ns">›</span> Tables <span class="ns">›</span> aiops-incidents <span class="ns">›</span> Delete table</div>
+        <div class="nav-path">IAM <span class="ns">›</span> Roles <span class="ns">›</span> aiops-brain-role <span class="ns">›</span> Delete</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px">
+    <div class="eyebrow" style="margin-bottom:10px">Cost breakdown</div>
+    <table class="rtbl">
+      <thead><tr><th>Resource</th><th>Rate</th><th>This lab (1hr)</th><th>If left 30 days</th></tr></thead>
+      <tbody>
+        <tr><td>Lambda (2 functions)</td><td class="mn">First 1M calls free</td><td class="mn cg">$0.00</td><td class="mn cg">$0.00</td></tr>
+        <tr><td>CloudWatch alarm</td><td class="mn">$0.10/alarm/month</td><td class="mn cg">$0.003</td><td class="mn cg">$0.10</td></tr>
+        <tr><td>CloudWatch Logs</td><td class="mn">$0.50/GB ingested</td><td class="mn cg">~$0.01</td><td class="mn ca">~$0.30</td></tr>
+        <tr><td>SNS</td><td class="mn">First 1M free</td><td class="mn cg">$0.00</td><td class="mn cg">$0.00</td></tr>
+        <tr><td>Bedrock (Claude Haiku)</td><td class="mn">~$0.001/classification</td><td class="mn cg">$0.002</td><td class="mn cg">$0.05</td></tr>
+        <tr><td>DynamoDB on-demand</td><td class="mn">$0.25/M writes</td><td class="mn cg">~$0.00</td><td class="mn cg">~$0.01</td></tr>
+        <tr><td><strong>Total</strong></td><td></td><td class="mn cg"><strong>~$0.02</strong></td><td class="mn ca"><strong>~$0.47</strong></td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:13px;color:var(--ink3);margin-top:8px">The lab costs essentially nothing. The only thing that accumulates if you forget is CloudWatch Logs storage. Set the log groups to 7-day retention and you'll never pay more than cents.</div>
+  </div>
+</div>
+
+</div><!-- /page -->
+
+<script>
+function sw(name,btn){
+  document.querySelectorAll('.pane').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.tb').forEach(e=>e.classList.remove('on'));
+  document.getElementById('pane-'+name).classList.add('on');
+  btn.classList.add('on');
+  // auto-open first step
+  setTimeout(()=>{
+    const f=document.querySelector('.pane.on .step');
+    if(f&&!document.getElementById('bd-'+f.id).classList.contains('open')){
+      document.getElementById('bd-'+f.id).classList.add('open');
+      document.getElementById('tg-'+f.id).textContent='−';
+    }
+  },50);
+}
+function tog(id){
+  const b=document.getElementById('bd-'+id);
+  const t=document.getElementById('tg-'+id);
+  const o=b.classList.toggle('open');
+  t.textContent=o?'−':'＋';
+}
+function isw(pid,grp,btn){
+  document.querySelectorAll('[id^="ip-'+grp+'"]').forEach(e=>e.classList.remove('on'));
+  btn.closest('.step-body').querySelectorAll('.itb').forEach(e=>e.classList.remove('on'));
+  document.getElementById('ip-'+pid).classList.add('on');
+  btn.classList.add('on');
+}
+function cp(btn){
+  const pre=btn.closest('.code-wrap').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent='copied!';
+    setTimeout(()=>btn.textContent='copy',1800);
+  });
+}
+window.addEventListener('load',()=>{
+  const f=document.querySelector('.pane.on .step');
+  if(f){
+    document.getElementById('bd-'+f.id).classList.add('open');
+    document.getElementById('tg-'+f.id).textContent='−';
+  }
+});
+</script>
+</body>
+</html>
