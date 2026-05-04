@@ -15,7 +15,7 @@ TOPIC_ARN = os.environ["SNS_TOPIC_ARN"]
 # ── Step 1: Pull last 10 min of metrics ───────────────────────────
 def get_current_metrics() -> dict:
     end   = datetime.utcnow()
-    start = end - timedelta(minutes=10)
+    start = end - timedelta(minutes=2)
     result = {}
     for metric in ["ErrorRate", "Latency", "RequestCount"]:
         resp = cw.get_metric_statistics(
@@ -50,15 +50,25 @@ Classify this situation. Respond ONLY with valid JSON, no other text:
 }}"""
 
     resp = bedrock.invoke_model(
-        modelId="anthropic.claude-haiku-4-5-20251001-v1:0",
+        modelId="arn:aws:bedrock:us-east-2:160631388468:application-inference-profile/6bdlb448as3d",
         body=json.dumps({
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 400,
-            "messages": [{"role": "user", "content": prompt}]
-        })
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 400,
+        "temperature": 0,   # IMPORTANT
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    })
     )
-    text = json.loads(resp["body"].read())["content"][0]["text"]
-    return json.loads(text)
+
+    raw = resp["body"].read().decode("utf-8")
+
+    print(f"Claude raw response: {raw}")
+    text = json.loads(raw)["content"][0]["text"]
+    return text
 
 
 # ── Step 3: Execute playbook ──────────────────────────────────────
